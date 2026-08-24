@@ -11,6 +11,11 @@ matches, and the check that notices is the whole point.
 
 58 gzipped shards, one per scenario, holding **1,773 replay scenes**.
 
+Each shard maps a corpus-relative scene path to that scene's **exact text**, so
+expanding a shard reproduces the bytes the manifest hashes. Storing the parsed
+document instead costs ~0.3% of each scene's length to separator and key-order
+differences, and every expanded scene then fails its hash.
+
 | | |
 |---|---|
 | Root hash | `b4e3946150a02dc6f77b2c9513d3ed5eaff209827734163b40c905d2c6fa212d` |
@@ -18,12 +23,24 @@ matches, and the check that notices is the whole point.
 | Manifest | `datasets/corpus/manifest.json` in the main repo |
 | Frozen | 2026-08-24 |
 
-Verify a checkout against the manifest:
+## Using it
+
+From a checkout of the main repo, with this repository cloned alongside:
 
 ```bash
 cd py_src
-python -m tools.corpus.freeze ./corpus/ --check ../datasets/corpus/manifest.json
+# everything, verified scene by scene and by root hash
+python -m tools.corpus.expand ../../marvel-lcg-corpus/ \
+    --out ./corpus/ --manifest ../datasets/corpus/manifest.json
+
+# or one scenario, which is why the shards are split this way
+python -m tools.corpus.expand ../../marvel-lcg-corpus/ \
+    --out ./corpus/ --manifest ../datasets/corpus/manifest.json --only rhino
 ```
+
+`--manifest` is what makes it a verification rather than a decompression: every
+scene is hashed as it lands, and the root hash over the whole set is recomputed
+so that an omission cannot pass as success.
 
 ## Why the shards are here and the manifest is not
 
